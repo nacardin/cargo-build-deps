@@ -1,0 +1,13 @@
+[package]
+name = "cargo-build-deps"
+version = "0.1.0"
+authors = ["Nick Cardin <nick@cardin.email>"]
+license = "MIT"
+repository = "https://github.com/nacardin/cargo-build-deps"
+description = """
+A cargo subcommand to build dependencies, helps speed up docker builds by 
+allowing dependencies to be built earlier and cached.
+"""
+
+[dependencies]
+toml = "0.4"
