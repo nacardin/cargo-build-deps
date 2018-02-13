@@ -1,5 +1,6 @@
 extern crate toml;
 
+use std::env;
 use std::io::prelude::*;
 use std::fs::File;
 use toml::Value as Toml;
@@ -80,7 +81,7 @@ fn build_package(pkg_name: &str) {
 }
 
 fn execute_command(command: &mut Command) {
-    let mut child = command.spawn().expect("failed to execute process");
+    let mut child = command.envs(env::vars()).spawn().expect("failed to execute process");
 
     let exit_status = child.wait().expect("failed to run command");
 
