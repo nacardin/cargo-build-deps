@@ -2,6 +2,17 @@
 name = "cargo-build-deps"
 version = "0.1.0"
 authors = ["Nick Cardin <nick@cardin.email>"]
+categories = [
+    "development-tools",
+    "development-tools::cargo-plugins",
+]
+keywords = [
+    "cargo",
+    "cargo-subcommand",
+    "cli",
+    "dependencies",
+    "crates",
+]
 license = "MIT"
 repository = "https://github.com/nacardin/cargo-build-deps"
 description = """
