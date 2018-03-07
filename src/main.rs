@@ -11,6 +11,7 @@ use clap::{App, Arg};
 fn main() {
 
     let matched_args = App::new("cargo build-deps")
+        .arg(Arg::with_name("build-deps"))
         .arg(Arg::with_name("release").long("release"))
         .get_matches();
 

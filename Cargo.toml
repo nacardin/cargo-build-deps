@@ -1,6 +1,6 @@
 [package]
 name = "cargo-build-deps"
-version = "0.1.0"
+version = "0.1.4"
 authors = ["Nick Cardin <nick@cardin.email>"]
 categories = [
     "development-tools",
@@ -19,6 +19,7 @@ description = """
 A cargo subcommand to build dependencies, helps speed up docker builds by 
 allowing dependencies to be built earlier and cached.
 """
+readme = "README.md"
 
 [dependencies]
 toml = "0.4"
