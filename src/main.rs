@@ -11,7 +11,7 @@ use clap::{App, Arg};
 fn main() {
 
     let matched_args = App::new("cargo build-deps")
-        .arg(Arg::with_name("release").long("release")) 
+        .arg(Arg::with_name("release").long("release"))
         .get_matches();
 
     let is_release = matched_args.is_present("release");
@@ -42,13 +42,17 @@ fn get_toml(file_path: &str) -> Toml {
 
 fn parse_package_name(toml: &Toml) -> &str {
     match toml {
-        &Toml::Table(ref table) => match table.get("package") {
-            Some(&Toml::Table(ref table)) => match table.get("name") {
-                Some(&Toml::String(ref name)) => name,
-                _ => panic!("failed to parse name"),
-            },
-            _ => panic!("failed to parse package"),
-        },
+        &Toml::Table(ref table) => {
+            match table.get("package") {
+                Some(&Toml::Table(ref table)) => {
+                    match table.get("name") {
+                        Some(&Toml::String(ref name)) => name,
+                        _ => panic!("failed to parse name"),
+                    }
+                }
+                _ => panic!("failed to parse package"),
+            }
+        }
         _ => panic!("failed to parse Cargo.toml: incorrect format"),
     }
 }
@@ -59,24 +63,25 @@ fn parse_deps<'a>(toml: &'a Toml, top_pkg_name: &str) -> Vec<String> {
             let top_pkg = pkgs.iter()
                 .find(|pkg| pkg.get("name").unwrap().as_str().unwrap() == top_pkg_name);
             match top_pkg {
-                Some(&Toml::Table(ref pkg)) => match pkg.get("dependencies") {
-                    Some(&Toml::Array(ref deps_toml_array)) => deps_toml_array
-                        .iter()
-                        .map(|value| {
-                            let mut value_parts = value.as_str().unwrap().split(" ");
-                            format!(
-                                "{}:{}",
-                                value_parts
-                                    .next()
-                                    .expect("failed to parse name from depencency string"),
-                                value_parts
-                                    .next()
-                                    .expect("failed to parse version from depencency string")
-                            )
-                        })
-                        .collect(),
-                    _ => panic!("error parsing dependencies table"),
-                },
+                Some(&Toml::Table(ref pkg)) => {
+                    match pkg.get("dependencies") {
+                        Some(&Toml::Array(ref deps_toml_array)) => {
+                            deps_toml_array.iter()
+                                .map(|value| {
+                                    let mut value_parts = value.as_str().unwrap().split(" ");
+                                    format!("{}:{}",
+                                            value_parts.next()
+                                                .expect("failed to parse name from depencency \
+                                                         string"),
+                                            value_parts.next()
+                                                .expect("failed to parse version from depencency \
+                                                         string"))
+                                })
+                                .collect()
+                        }
+                        _ => panic!("error parsing dependencies table"),
+                    }
+                }
                 _ => panic!("failed to find top package"),
             }
         }
