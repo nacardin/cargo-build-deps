@@ -1,12 +1,21 @@
 extern crate toml;
+extern crate clap;
 
 use std::env;
 use std::io::prelude::*;
 use std::fs::File;
 use toml::Value as Toml;
 use std::process::Command;
+use clap::{App, Arg};
 
 fn main() {
+
+    let matched_args = App::new("cargo build-deps")
+        .arg(Arg::with_name("release").long("release")) 
+        .get_matches();
+
+    let is_release = matched_args.is_present("release");
+
     execute_command(Command::new("cargo").arg("update"));
 
     let cargo_toml = get_toml("Cargo.toml");
@@ -18,7 +27,7 @@ fn main() {
     println!("building packages: {:?}", deps);
 
     for dep in deps {
-        build_package(&dep);
+        build_package(&dep, is_release);
     }
 
     println!("done");
@@ -75,9 +84,20 @@ fn parse_deps<'a>(toml: &'a Toml, top_pkg_name: &str) -> Vec<String> {
     }
 }
 
-fn build_package(pkg_name: &str) {
+fn build_package(pkg_name: &str, is_release: bool) {
     println!("building package: {:?}", pkg_name);
-    execute_command(Command::new("cargo").arg("build").arg("-p").arg(pkg_name).arg("--release"));
+
+    let mut command = Command::new("cargo");
+
+    let command_with_args = command.arg("build").arg("-p").arg(pkg_name);
+
+    let command_with_args_2 = if is_release {
+        command_with_args.arg("--release")
+    } else {
+        command_with_args
+    };
+
+    execute_command(command_with_args_2);
 }
 
 fn execute_command(command: &mut Command) {
