@@ -13,7 +13,7 @@ keywords = [
     "dependencies",
     "crates",
 ]
-license = "MIT"
+license = "MIT/Apache-2.0"
 repository = "https://github.com/nacardin/cargo-build-deps"
 description = """
 A cargo subcommand to build dependencies, helps speed up docker builds by 

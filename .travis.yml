@@ -9,6 +9,7 @@ matrix:
     - rust: nightly
 os:
   - linux
+  - osx
 env:
   global:
     - RUST_BACKTRACE=1
