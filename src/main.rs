@@ -13,9 +13,14 @@ fn main() {
     let matched_args = App::new("cargo build-deps")
         .arg(Arg::with_name("build-deps"))
         .arg(Arg::with_name("release").long("release"))
+        .arg(Arg::with_name("target").long("target"))
         .get_matches();
 
     let is_release = matched_args.is_present("release");
+    let target = match matched_args.value_of("target") {
+        Some(value) => value,
+        None => ""
+    };
 
     execute_command(Command::new("cargo").arg("update"));
 
@@ -28,7 +33,7 @@ fn main() {
     println!("building packages: {:?}", deps);
 
     for dep in deps {
-        build_package(&dep, is_release);
+        build_package(&dep, is_release, &target);
     }
 
     println!("done");
@@ -90,20 +95,26 @@ fn parse_deps<'a>(toml: &'a Toml, top_pkg_name: &str) -> Vec<String> {
     }
 }
 
-fn build_package(pkg_name: &str, is_release: bool) {
+fn build_package(pkg_name: &str, is_release: bool, target: &str) {
     println!("building package: {:?}", pkg_name);
 
     let mut command = Command::new("cargo");
 
     let command_with_args = command.arg("build").arg("-p").arg(pkg_name);
 
-    let command_with_args_2 = if is_release {
+    let command_with_args = if is_release {
         command_with_args.arg("--release")
     } else {
         command_with_args
     };
 
-    execute_command(command_with_args_2);
+    let command_with_args = if !target.is_empty() {
+        command_with_args.arg("--target=".to_owned() + target)
+    } else {
+        command_with_args
+    };
+
+    execute_command(command_with_args);
 }
 
 fn execute_command(command: &mut Command) {
