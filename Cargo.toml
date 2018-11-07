@@ -22,5 +22,5 @@ allowing dependencies to be built earlier and cached.
 readme = "README.md"
 
 [dependencies]
-toml = "0.4"
 clap = "2.31"
+serde_json = "1.0"
