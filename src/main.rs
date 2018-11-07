@@ -1,109 +1,67 @@
-extern crate toml;
 extern crate clap;
+extern crate serde_json;
 
-use std::env;
-use std::io::prelude::*;
-use std::fs::File;
-use toml::Value as Toml;
-use std::process::Command;
 use clap::{App, Arg};
+use std::process::Command;
+use serde_json::Value;
+use std::env;
+
+
+fn build_deps(is_release: bool) {
+    let output = Command::new("cargo")
+        .args(&["build", "--build-plan", "-Z", "unstable-options"])
+        .output()
+        .expect("Failed to execute");
+    if !output.status.success() {
+        let stderr = String::from_utf8(output.stderr).expect("Not UTF-8");
+        panic!(stderr)
+    }
+    let plan = String::from_utf8(output.stdout).expect("Not UTF-8");
+    let cwd = env::current_dir().unwrap();
+    let val: Value = serde_json::from_str(&plan).unwrap();
+    let invocations = val.get("invocations").unwrap().as_array().unwrap();
+    let pkgs: Vec<String> = invocations
+        .iter()
+        .filter(|&x| {
+            x.get("args").unwrap().as_array().unwrap().len() != 0
+                && x.get("cwd").unwrap().as_str().unwrap() != cwd.as_os_str()
+        })
+        .map(|ref x| {
+            let env = x.get("env")
+                .unwrap()
+                .as_object()
+                .unwrap();
+            let name = env.get("CARGO_PKG_NAME")
+                .unwrap()
+                .as_str()
+                .unwrap();
+            let version = env.get("CARGO_PKG_VERSION")
+                .unwrap()
+                .as_str()
+                .unwrap();
+            format!("{}:{}", name, version)
+        })
+        .collect();
+
+    let mut command = Command::new("cargo");
+    command.arg("build");
+    for pkg in pkgs {
+        command.arg("-p");
+        command.arg(&pkg);
+    }
+    if is_release {
+        command.arg("--release");
+    }
+    execute_command(&mut command);
+}
 
 fn main() {
-
     let matched_args = App::new("cargo build-deps")
         .arg(Arg::with_name("build-deps"))
         .arg(Arg::with_name("release").long("release"))
         .get_matches();
-
     let is_release = matched_args.is_present("release");
-
-    execute_command(Command::new("cargo").arg("update"));
-
-    let cargo_toml = get_toml("Cargo.toml");
-    let top_pkg_name = parse_package_name(&cargo_toml);
-
-    let cargo_lock = get_toml("Cargo.lock");
-    let deps = parse_deps(&cargo_lock, top_pkg_name);
-
-    println!("building packages: {:?}", deps);
-
-    for dep in deps {
-        build_package(&dep, is_release);
-    }
-
-    println!("done");
-}
-
-fn get_toml(file_path: &str) -> Toml {
-    let mut toml_file = File::open(file_path).unwrap();
-    let mut toml_string = String::new();
-    toml_file.read_to_string(&mut toml_string).unwrap();
-    toml_string.parse().expect("failed to parse toml")
-}
-
-fn parse_package_name(toml: &Toml) -> &str {
-    match toml {
-        &Toml::Table(ref table) => {
-            match table.get("package") {
-                Some(&Toml::Table(ref table)) => {
-                    match table.get("name") {
-                        Some(&Toml::String(ref name)) => name,
-                        _ => panic!("failed to parse name"),
-                    }
-                }
-                _ => panic!("failed to parse package"),
-            }
-        }
-        _ => panic!("failed to parse Cargo.toml: incorrect format"),
-    }
-}
-
-fn parse_deps<'a>(toml: &'a Toml, top_pkg_name: &str) -> Vec<String> {
-    match toml.get("package") {
-        Some(&Toml::Array(ref pkgs)) => {
-            let top_pkg = pkgs.iter()
-                .find(|pkg| pkg.get("name").unwrap().as_str().unwrap() == top_pkg_name);
-            match top_pkg {
-                Some(&Toml::Table(ref pkg)) => {
-                    match pkg.get("dependencies") {
-                        Some(&Toml::Array(ref deps_toml_array)) => {
-                            deps_toml_array.iter()
-                                .map(|value| {
-                                    let mut value_parts = value.as_str().unwrap().split(" ");
-                                    format!("{}:{}",
-                                            value_parts.next()
-                                                .expect("failed to parse name from depencency \
-                                                         string"),
-                                            value_parts.next()
-                                                .expect("failed to parse version from depencency \
-                                                         string"))
-                                })
-                                .collect()
-                        }
-                        _ => panic!("error parsing dependencies table"),
-                    }
-                }
-                _ => panic!("failed to find top package"),
-            }
-        }
-        _ => panic!("failed to find packages in Cargo.lock"),
-    }
-}
-
-fn build_package(pkg_name: &str, is_release: bool) {
-    println!("building package: {:?}", pkg_name);
-
-    let mut command = Command::new("cargo");
-
-    let command_with_args = command.arg("build").arg("-p").arg(pkg_name);
-
-    let command_with_args_2 = if is_release {
-        command_with_args.arg("--release")
-    } else {
-        command_with_args
-    };
-
-    execute_command(command_with_args_2);
+    build_deps(is_release);
 }
 
 fn execute_command(command: &mut Command) {
