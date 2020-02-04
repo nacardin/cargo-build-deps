@@ -23,4 +23,4 @@ readme = "README.md"
 
 [dependencies]
 toml = "0.4"
-clap = "2.31"
+clap = "2.33"
