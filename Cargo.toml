@@ -22,5 +22,5 @@ allowing dependencies to be built earlier and cached.
 readme = "README.md"
 
 [dependencies]
-toml = "0.4"
+toml = "0.5"
 clap = "2.33"
