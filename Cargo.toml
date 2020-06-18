@@ -1,5 +1,5 @@
 [package]
-name = "cargo-build-deps"
+name = "cargo-bdeps"
 version = "0.1.5"
 authors = ["Nick Cardin <nick@cardin.email>"]
 categories = [
