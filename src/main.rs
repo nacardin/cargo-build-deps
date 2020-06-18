@@ -30,13 +30,13 @@ fn main() {
     let cargo_toml = get_toml("Cargo.toml");
     let dependencies = parse_dependencies(&cargo_toml);
 
-    println!("Start building packages");
+    println!("    Start building packages");
 
     for dependency in dependencies {
         build_package(&dependency, is_release, &target);
     }
 
-    println!("Finished");
+    println!("    Finished");
 }
 
 fn get_toml(file_path: &str) -> Toml {
@@ -73,7 +73,9 @@ fn format_package(name: &String, value: &Toml) -> String {
 }
 
 fn build_package(pkg_name: &str, is_release: bool, target: &str) {
-    println!("Building package: {:?}", pkg_name);
+    let pkg_name = pkg_name.split(':').next().expect("Couldn't get package name");
+
+    println!("    Building package: {:?}", pkg_name);
 
     let mut command = Command::new("cargo");
     let command_with_args = command.arg("build").arg("-p").arg(pkg_name);
