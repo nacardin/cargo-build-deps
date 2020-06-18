@@ -14,6 +14,7 @@ fn main() {
         .arg(Arg::with_name("build-deps"))
         .arg(Arg::with_name("release").long("release"))
         .arg(Arg::with_name("target").long("target"))
+        .arg(Arg::with_name("skip-update").long("skip-update"))
         .get_matches();
 
     let is_release = matched_args.is_present("release");
@@ -22,7 +23,9 @@ fn main() {
         None => ""
     };
 
-    execute_command(Command::new("cargo").arg("update"));
+    if !matched_args.is_present("skip-update") {
+        execute_command(Command::new("cargo").arg("update"));
+    }
 
     let cargo_toml = get_toml("Cargo.toml");
     let top_pkg_name = parse_package_name(&cargo_toml);
@@ -35,8 +38,6 @@ fn main() {
     for dep in deps {
         build_package(&dep, is_release, &target);
     }
-
-    println!("done");
 }
 
 fn get_toml(file_path: &str) -> Toml {
