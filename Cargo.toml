@@ -1,7 +1,7 @@
 [package]
 name = "cargo-bdeps"
 version = "0.1.5"
-authors = ["Nick Cardin <nick@cardin.email>"]
+authors = ["Nick Cardin <nick@cardin.email>", "errmac-v"]
 categories = [
     "development-tools",
     "development-tools::cargo-plugins",
