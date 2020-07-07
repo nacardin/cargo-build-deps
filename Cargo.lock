@@ -25,7 +25,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "cargo-bdeps"
-version = "0.1.6"
+version = "0.1.7"
 dependencies = [
  "clap 2.33.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "json 0.12.4 (registry+https://github.com/rust-lang/crates.io-index)",
