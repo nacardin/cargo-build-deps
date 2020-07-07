@@ -24,3 +24,5 @@ readme = "README.md"
 [dependencies]
 toml = "0.5"
 clap = "2.33"
+semver = "0.10.0"
+json = "0.12.4"

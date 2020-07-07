@@ -1,7 +1,10 @@
 extern crate clap;
+extern crate json;
+extern crate semver;
 extern crate toml;
 
 use clap::{App, Arg};
+use semver::Version;
 use toml::Value as Toml;
 
 use std::env;
@@ -32,8 +35,21 @@ fn main() {
 
     println!("    Start building packages");
 
+    let cargo_metadata = json::parse(
+        std::str::from_utf8(
+            &Command::new("cargo")
+                .arg("metadata")
+                .envs(env::vars())
+                .output()
+                .expect("Couldn't run 'cargo metadata'")
+                .stdout,
+        )
+        .expect("Couldn't get 'cargo metadata' output as utf8"),
+    )
+    .expect("Couldn't parse 'cargo metadata' output as JSON");
+
     for dependency in dependencies {
-        build_package(&dependency, is_release, &target);
+        build_package(&dependency, is_release, &target, &cargo_metadata);
     }
 
     println!("    Finished");
@@ -72,13 +88,55 @@ fn format_package(name: &String, value: &Toml) -> String {
     }
 }
 
-fn build_package(pkg_name: &str, is_release: bool, target: &str) {
-    let pkg_name = pkg_name.split(':').next().expect("Couldn't get package name");
+fn build_package(pkg_name: &str, is_release: bool, target: &str, cargo_metadata: &json::JsonValue) {
+    let mut split = pkg_name.split(':');
+    let pkg_name = split.next().expect("Couldn't get package name");
+    let mut pkg_version = split
+        .next()
+        .expect("Couldn't get package version")
+        .to_string();
 
-    println!("    Building package: {:?}", pkg_name);
+    // Cargo.toml allows non-semver dependencies.
+    // This is an issue, because `cargo build -p <package>:<version> only allows semver format for the version.
+    // Thanksfully, `cargo metadata` allows us to find the precise package version.
+    if let Err(_) = Version::parse(&pkg_version) {
+        println!(
+            "    Getting package '{}' semver from 'cargo metadata'",
+            pkg_name
+        );
+        pkg_version.clear();
+        pkg_version.push_str(
+            cargo_metadata["packages"]
+                .members()
+                // Only keep matching package names
+                .filter(|e| e["name"] == pkg_name)
+                // Only keep matching start of package version
+                .filter(|e| {
+                    e["version"]
+                        .as_str()
+                        .expect("Could't get version as str")
+                        .starts_with(&pkg_version)
+                })
+                // At this point it's possible that there is more than one result,
+                // but I'll handle this case if it causes me trouble in the future
+                // Assume that the first one is the good one!
+                .next()
+                .expect(&format!(
+                    "Couldn't find package {} in 'cargo metadata' output",
+                    pkg_name
+                ))["version"]
+                .as_str()
+                .expect("Couldn't get version as str"),
+        );
+    }
+
+    println!("    Building package: {}:{}", pkg_name, pkg_version);
 
     let mut command = Command::new("cargo");
-    let command_with_args = command.arg("build").arg("-p").arg(pkg_name);
+    let command_with_args = command
+        .arg("build")
+        .arg("-p")
+        .arg(format!("{}:{}", pkg_name, pkg_version));
 
     let command_with_args = if is_release {
         command_with_args.arg("--release")
