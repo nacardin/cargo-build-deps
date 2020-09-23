@@ -80,7 +80,7 @@ fn parse_deps<'a>(toml: &'a Toml, top_pkg_name: &str) -> Vec<String> {
                                                 .expect("failed to parse name from depencency \
                                                          string"),
                                             value_parts.next()
-                                                .expect("failed to parse version from depencency \
+                                                .expect("failed to parse version from dependency \
                                                          string"))
                                 })
                                 .collect()
