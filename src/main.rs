@@ -86,7 +86,7 @@ fn cargo_lock_find_package<'a>(toml: &'a Toml, pkg_name: &str) -> Result<&'a Tom
                     false, |name| name.as_str().unwrap_or("") == pkg_name,
                 )
             }).map_or(
-                Err(format!("failed to find top package {}", pkg_name)),
+                Err(format!("failed to find package {}", pkg_name)),
                 |x| Ok(x),
             )
         }
@@ -95,17 +95,30 @@ fn cargo_lock_find_package<'a>(toml: &'a Toml, pkg_name: &str) -> Result<&'a Tom
 }
 
 fn crate_name_version(toml: &Toml, crate_name: &str) -> Result<String, String> {
-    let value_pkg = cargo_lock_find_package(
-        toml, crate_name,
-    )?;
-    let crate_version = value_pkg.get("version").map_or(
-        Err(format!("Version not found for {}", crate_name)),
-        |x| Ok(x),
-    )?.as_str().map_or(
-        Err(format!("Invalid version field for {}", crate_name)),
-        |x| Ok(x),
-    )?;
-    Ok(format!("{}:{}", crate_name, crate_version))
+    if crate_name.contains(" ") {
+        let mut value_parts = crate_name.split(" ");
+        let crate_name = value_parts.next().map_or(
+            Err(format!("failed to parse name from dependency string {:?}", crate_name)),
+            |x| Ok(x),
+        )?;
+        let crate_version = value_parts.next().map_or(
+            Err(format!("failed to parse version from dependency string {:?}", crate_name)),
+            |x| Ok(x),
+        )?;
+        Ok(format!("{}:{}", crate_name, crate_version))
+    } else {
+        let value_pkg = cargo_lock_find_package(
+            toml, crate_name,
+        )?;
+        let crate_version = value_pkg.get("version").map_or(
+            Err(format!("Version not found for {}", crate_name)),
+            |x| Ok(x),
+        )?.as_str().map_or(
+            Err(format!("Invalid version field for {}", crate_name)),
+            |x| Ok(x),
+        )?;
+        Ok(format!("{}:{}", crate_name, crate_version))
+    }
 }
 
 fn parse_deps(toml: &Toml, top_pkg_name: &str) -> Result<Vec<String>, String> {
