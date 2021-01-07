@@ -1,6 +1,6 @@
 [package]
 name = "cargo-build-deps"
-version = "0.1.4"
+version = "0.2.0"
 authors = ["Nick Cardin <nick@cardin.email>"]
 categories = [
     "development-tools",
