@@ -26,7 +26,7 @@ Inspired by (http://atodorov.org/blog/2017/08/30/speeding-up-rust-builds-inside-
 Change Dockerfile from
 
 ```
-FROM rust:1.23 as rust-builder
+FROM rust:1 as rust-builder
 RUN mkdir /tmp/PROJECT_NAME
 WORKDIR /tmp/PROJECT_NAME
 COPY . .
@@ -36,7 +36,7 @@ RUN cargo build  --release
 to
 
 ```
-FROM rust:1.23 as rust-builder
+FROM rust:1 as rust-builder
 RUN cargo install cargo-build-deps
 RUN cd /tmp && USER=root cargo new --bin PROJECT_NAME
 WORKDIR /tmp/PROJECT_NAME
